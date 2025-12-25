@@ -4,27 +4,10 @@ import pandas as pd
 
 
 # =======================
-# LOAD MODELS + FEATURES
+# LOAD MODEL + FEATURES
 # =======================
 
 log_model = joblib.load("logistic_model.pkl")
-rf_model = joblib.load("random_forest.pkl")
-xgb_model = joblib.load("xgboost_model.pkl")
-
-
-# -------- REAL XGBOOST FIX --------
-# Old saved XGBoost models expect a label_encoder attribute
-# New XGBoost versions removed it — so we attach a dummy one
-
-if not hasattr(xgb_model, "label_encoder"):
-    class DummyLabelEncoder:
-        def fit(self, *args, **kwargs): return self
-        def transform(self, x): return x
-        def fit_transform(self, x): return x
-
-    xgb_model.label_encoder = DummyLabelEncoder()
-
-
 feature_names = joblib.load("model_features.pkl")
 
 
@@ -101,7 +84,6 @@ job_map = {
 }
 
 
-
 # =======================
 # PREDICT FUNCTION
 # =======================
@@ -148,29 +130,11 @@ def predict_credit(
     df = df.reindex(columns=feature_names, fill_value=0)
     df = df.fillna(0)
 
-    log_pred = log_model.predict(df)[0]
-    rf_pred  = rf_model.predict(df)[0]
-    xgb_pred = xgb_model.predict(df)[0]
+    pred = log_model.predict(df)[0]
 
-    def normalize(x):
-        if isinstance(x, str):
-            return 1 if x.lower() == "good" else 0
-        return int(x)
+    label = "Good Credit" if pred == 1 else "Bad Credit"
 
-    log_pred = normalize(log_pred)
-    rf_pred  = normalize(rf_pred)
-    xgb_pred = normalize(xgb_pred)
-
-    def label(v):
-        return "Good Credit" if v == 1 else "Bad Credit"
-
-    result = ""
-    result += f"Logistic Regression: {label(log_pred)}\n"
-    result += f"Random Forest: {label(rf_pred)}\n"
-    result += f"XGBoost: {label(xgb_pred)}\n"
-
-    return result
-
+    return f"Logistic Regression Prediction: {label}"
 
 
 # =======================
@@ -195,14 +159,14 @@ inputs = [
     gr.Dropdown(list(job_map.keys()), label="Job"),
 ]
 
-outputs = gr.Textbox(label="Model Predictions")
+outputs = gr.Textbox(label="Model Prediction")
 
 app = gr.Interface(
     fn=predict_credit,
     inputs=inputs,
     outputs=outputs,
     title="Credit Scoring Prediction App",
-    description="User-friendly credit scoring app with dropdown inputs.",
+    description="Credit scoring using Logistic Regression only.",
 )
 
 app.launch()
