@@ -1,7 +1,7 @@
-gradio
-pandas
-numpy==1.24.4
+gradio==4.12.0
+pandas==2.0.3
+numpy==1.23.5
 scipy==1.10.1
 scikit-learn==1.0.2
-joblib
-xgboost
+joblib==1.2.0
+xgboost==1.7.6
