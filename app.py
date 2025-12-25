@@ -119,13 +119,10 @@ def predict_credit(
     df = pd.get_dummies(df)
     df = df.reindex(columns=feature_names, fill_value=0)
 
-
-    # ---------- TRY predict_proba ----------
     try:
         prob = log_model.predict_proba(df)[0][1]
 
     except:
-        # ---------- FALLBACK ----------
         score = log_model.decision_function(df)[0]
         prob = 1 / (1 + np.exp(-score))
 
