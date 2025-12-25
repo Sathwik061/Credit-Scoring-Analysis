@@ -1,19 +1,13 @@
 import gradio as gr
 import joblib
 import pandas as pd
+import numpy as np
+from math import exp
 
-
-# =======================
-# LOAD MODEL + FEATURES
-# =======================
 
 log_model = joblib.load("logistic_model.pkl")
 feature_names = joblib.load("model_features.pkl")
 
-
-# =======================
-# CATEGORY MAPPINGS
-# =======================
 
 checking_map = {
     "No account": "A11",
@@ -84,10 +78,6 @@ job_map = {
 }
 
 
-# =======================
-# PREDICT FUNCTION
-# =======================
-
 def predict_credit(
     checking_acc_status,
     duration,
@@ -106,7 +96,6 @@ def predict_credit(
     job,
 ):
 
-    # Convert UI input to model encoding
     data = {
         "checking_acc_status": checking_map[checking_acc_status],
         "duration": duration,
@@ -127,32 +116,24 @@ def predict_credit(
 
     df = pd.DataFrame([data])
 
-    # Match training preprocessing
     df = pd.get_dummies(df)
     df = df.reindex(columns=feature_names, fill_value=0)
 
-    # =========================
-    # TRY PROBA — SAFE FALLBACK
-    # =========================
+
+    # ---------- TRY predict_proba ----------
     try:
         prob = log_model.predict_proba(df)[0][1]
 
-        # Adjust threshold (0.40 gives more GOOD predictions)
-        threshold = 0.40
+    except:
+        # ---------- FALLBACK ----------
+        score = log_model.decision_function(df)[0]
+        prob = 1 / (1 + np.exp(-score))
 
-        label = "Good Credit" if prob >= threshold else "Bad Credit"
+    threshold = 0.40
+    label = "Good Credit" if prob >= threshold else "Bad Credit"
 
-        return f"Logistic Regression Prediction: {label}\nProbability: {prob:.2f}"
+    return f"Logistic Regression Prediction: {label}\nProbability: {prob:.2f}"
 
-    except Exception as e:
-        pred = log_model.predict(df)[0]
-        label = "Good Credit" if pred == 1 else "Bad Credit"
-        return f"Logistic Regression Prediction: {label}\n(probability unavailable)"
-
-
-# =======================
-# GRADIO UI
-# =======================
 
 inputs = [
     gr.Dropdown(list(checking_map.keys()), label="Checking Account Status"),
