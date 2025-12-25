@@ -3,3 +3,5 @@ pandas
 scikit-learn
 xgboost
 joblib
+scikit-learn==1.2.2
+
